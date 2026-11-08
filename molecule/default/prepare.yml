@@ -1,0 +1,20 @@
+- name: Prepare
+  hosts: all
+  become: true
+  tasks:
+    - name: Install ufw, as ufw_firewall does on a real node
+      ansible.builtin.apt:
+        name: ufw
+        update_cache: true
+
+    - name: Create the boot partition's directory
+      ansible.builtin.file:
+        path: /boot/firmware
+        state: directory
+        mode: "0755"
+
+    - name: Copy in a Raspberry Pi's kernel command line
+      ansible.builtin.copy:
+        src: cmdline.txt
+        dest: /boot/firmware/cmdline.txt
+        mode: "0644"

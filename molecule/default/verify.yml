@@ -1,0 +1,103 @@
+- name: Verify both nodes
+  hosts: all
+  become: true
+  tasks:
+    - name: Read the kernel command line
+      ansible.builtin.slurp:
+        src: /boot/firmware/cmdline.txt
+      register: cmdline
+
+    - name: The memory cgroup is turned on, once, at the end of the line
+      ansible.builtin.assert:
+        that:
+          - (cmdline.content | b64decode).endswith(' rootwait cfg80211.ieee80211_regdom=GB ds=nocloud;i=rpi-imager-1794139163251 cgroup_memory=1 cgroup_enable=memory\n')
+          - (cmdline.content | b64decode).count('cgroup_enable=memory') == 1
+
+    - name: Read the forwarding and bridge settings
+      ansible.builtin.command: sysctl -n net.ipv4.ip_forward net.bridge.bridge-nf-call-iptables net.bridge.bridge-nf-call-ip6tables
+      register: sysctls
+      changed_when: false
+
+    - name: Forwarding and bridged traffic filtering are on
+      ansible.builtin.assert:
+        that: sysctls.stdout_lines == ['1', '1', '1']
+
+    - name: Read the config's permissions
+      ansible.builtin.stat:
+        path: /etc/rancher/k3s/config.yaml
+      register: config_file
+
+    - name: Only root can read the config
+      ansible.builtin.assert:
+        that: config_file.stat.mode == '0600'
+
+    - name: List the firewall rules
+      ansible.builtin.command: ufw show added
+      register: ufw_rules
+      changed_when: false
+
+    - name: The nodes and pods are allowed in
+      ansible.builtin.assert:
+        that:
+          - "'ufw allow from 172.30.0.10 to any port 10250 proto tcp' in ufw_rules.stdout"
+          - "'ufw allow from 172.30.0.11 to any port 8472 proto udp' in ufw_rules.stdout"
+          - "'ufw route allow from 10.42.0.0/16' in ufw_rules.stdout"
+          - "'ufw route allow to 10.43.0.0/16' in ufw_rules.stdout"
+          - "'ufw allow from 10.42.0.0/16' in ufw_rules.stdout"
+
+- name: Verify the server
+  hosts: server
+  become: true
+  tasks:
+    - name: Wait for both nodes to be Ready
+      ansible.builtin.command: k3s kubectl get nodes --no-headers
+      register: nodes
+      until: nodes.stdout_lines | select('search', ' Ready ') | list | length == 2
+      retries: 30
+      delay: 10
+      changed_when: false
+
+    - name: Read the server's config
+      ansible.builtin.slurp:
+        src: /etc/rancher/k3s/config.yaml
+      register: server_config
+
+    - name: The bundled ingress, load balancer and storage are off, and secrets are encrypted
+      ansible.builtin.assert:
+        that:
+          - (server_config.content | b64decode | from_yaml).disable == ['traefik', 'servicelb', 'local-storage']
+          - (server_config.content | b64decode | from_yaml)['secrets-encryption']
+
+    - name: List the firewall rules
+      ansible.builtin.command: ufw show added
+      register: ufw_rules
+      changed_when: false
+
+    - name: The Kubernetes API is open to the API sources
+      ansible.builtin.assert:
+        that: "'ufw allow from 172.30.0.0/24 to any port 6443 proto tcp' in ufw_rules.stdout"
+
+- name: Verify the agent
+  hosts: agent
+  become: true
+  tasks:
+    - name: List the firewall rules
+      ansible.builtin.command: ufw show added
+      register: ufw_rules
+      changed_when: false
+
+    - name: The Kubernetes API isn't opened on an agent
+      ansible.builtin.assert:
+        that: "'6443' not in ufw_rules.stdout"
+
+- name: Verify the fetched kubeconfig
+  hosts: localhost
+  tasks:
+    - name: Read the kubeconfig saved on the machine running Ansible
+      ansible.builtin.slurp:
+        src: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/kubeconfig"
+      register: kubeconfig
+
+    - name: The kubeconfig points at the server, not localhost
+      ansible.builtin.assert:
+        that: "'server: https://server:6443' in (kubeconfig.content | b64decode)"
