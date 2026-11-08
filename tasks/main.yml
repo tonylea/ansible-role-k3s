@@ -51,13 +51,25 @@
     path: /boot/firmware/cmdline.txt
   register: k3s_cmdline_file
 
+- name: Read the Raspberry Pi kernel command line
+  ansible.builtin.slurp:
+    src: /boot/firmware/cmdline.txt
+  register: k3s_cmdline
+  when: k3s_cmdline_file.stat.exists
+
+- name: Work out which memory cgroup parameters the command line is missing
+  ansible.builtin.set_fact:
+    k3s_cmdline_missing: "{{ ['cgroup_memory=1', 'cgroup_enable=memory'] | difference((k3s_cmdline.content | b64decode).split()) }}"
+  when: k3s_cmdline_file.stat.exists
+
 # Pi OS's firmware adds cgroup_disable=memory at boot; parameters later on the line win.
 - name: Turn on the memory cgroup on a Raspberry Pi
-  ansible.builtin.replace:
+  ansible.builtin.lineinfile:
     path: /boot/firmware/cmdline.txt
-    regexp: '^(?!.*cgroup_enable=memory)(.*\S) *$'
-    replace: '\1 cgroup_memory=1 cgroup_enable=memory'
-  when: k3s_cmdline_file.stat.exists
+    regexp: ^(.*)$
+    line: \1 {{ k3s_cmdline_missing | join(' ') }}
+    backrefs: true
+  when: k3s_cmdline_file.stat.exists and k3s_cmdline_missing | length > 0
 
 - name: Read the active cgroup controllers
   ansible.builtin.slurp:

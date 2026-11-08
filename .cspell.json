@@ -12,6 +12,7 @@
     "package-lock.json"
   ],
   "words": [
+    "backrefs",
     "cgroupns",
     "cmdline",
     "conntrack",
@@ -21,6 +22,7 @@
     "kmod",
     "kubeconfig",
     "kubelet",
+    "lineinfile",
     "netfilter",
     "nocloud",
     "PARTUUID",
