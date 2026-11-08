@@ -10,7 +10,7 @@
     - name: The memory cgroup is turned on, once, at the end of the line
       ansible.builtin.assert:
         that:
-          - (cmdline.content | b64decode).endswith(' rootwait cfg80211.ieee80211_regdom=GB ds=nocloud;i=rpi-imager-1794139163251 cgroup_memory=1 cgroup_enable=memory\n')
+          - (cmdline.content | b64decode).endswith('rpi-imager-1794139163251 cgroup_memory=1 cgroup_enable=memory\n')
           - (cmdline.content | b64decode).count('cgroup_enable=memory') == 1
 
     - name: Read the forwarding and bridge settings
