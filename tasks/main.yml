@@ -191,6 +191,15 @@
     path: /var/lib/rancher/k3s/server/node-token
   when: k3s_role == 'server'
 
+- name: Wait for the Kubernetes API to answer
+  ansible.builtin.command: k3s kubectl get nodes
+  register: k3s_api
+  until: k3s_api.rc == 0
+  retries: 30
+  delay: 10
+  changed_when: false
+  when: k3s_role == 'server'
+
 # delegate_to is worked out before when, so a server must not point it at its empty k3s_server.
 - name: Read the join token from the server
   ansible.builtin.slurp:
@@ -218,6 +227,17 @@
     INSTALL_K3S_EXEC: agent
   when: k3s_role == 'agent' and k3s_version not in k3s_installed.stdout
   changed_when: true
+
+# k3s names each node after its kernel's node name.
+- name: Wait for this agent to join the cluster
+  ansible.builtin.command: k3s kubectl get node {{ ansible_facts['nodename'] }}
+  delegate_to: "{{ k3s_server if k3s_role == 'agent' else inventory_hostname }}"
+  register: k3s_agent_node
+  until: k3s_agent_node.rc == 0
+  retries: 30
+  delay: 10
+  changed_when: false
+  when: k3s_role == 'agent'
 
 - name: Read the server's kubeconfig
   ansible.builtin.slurp:

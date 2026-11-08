@@ -25,6 +25,7 @@
     "lineinfile",
     "netfilter",
     "nocloud",
+    "nodename",
     "PARTUUID",
     "proc",
     "procps",
