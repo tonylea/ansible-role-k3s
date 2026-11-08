@@ -26,6 +26,7 @@ Installs a pinned k3s server or agent on Debian trixie and Raspberry Pi OS, with
 | `k3s_tls_san_extra` | `[]` | Other names for the API certificate, such as a DNS alias |
 | `k3s_cluster_cidr` | `10.42.0.0/16` | Pod range |
 | `k3s_service_cidr` | `10.43.0.0/16` | Service range |
+| `k3s_cluster_dns` | `10.43.0.10` | Cluster DNS address, inside the service range |
 | `k3s_kube_reserved` | `cpu=250m,memory=512Mi` | Kept back from pods for Kubernetes |
 | `k3s_system_reserved` | `cpu=250m,memory=512Mi` | Kept back from pods for the OS |
 | `k3s_kubeconfig_fetch_path` | empty | Where to save the server's kubeconfig on the machine running Ansible |

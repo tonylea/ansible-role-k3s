@@ -13,6 +13,7 @@ tls-san:
 {% endfor %}
 cluster-cidr: {{ k3s_cluster_cidr }}
 service-cidr: {{ k3s_service_cidr }}
+cluster-dns: {{ k3s_cluster_dns }}
 kubelet-arg:
   - kube-reserved={{ k3s_kube_reserved }}
   - system-reserved={{ k3s_system_reserved }}
