@@ -10,6 +10,13 @@
       A server also needs k3s_api_sources; an agent needs k3s_server.
     quiet: true
 
+- name: Install iptables and conntrack, which k3s uses from the host
+  ansible.builtin.apt:
+    name:
+      - iptables
+      - conntrack
+    state: present
+
 - name: Read the active swap
   ansible.builtin.slurp:
     src: /proc/swaps
