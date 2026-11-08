@@ -101,3 +101,4 @@
     - name: The kubeconfig points at the server, not localhost
       ansible.builtin.assert:
         that: "'server: https://server:6443' in (kubeconfig.content | b64decode)"
+        fail_msg: "The kubeconfig's server lines: {{ (kubeconfig.content | b64decode).splitlines() | select('search', 'server:') | list }}"
