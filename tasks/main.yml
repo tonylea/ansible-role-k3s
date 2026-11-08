@@ -1,0 +1,256 @@
+- name: Check the role's variables
+  ansible.builtin.assert:
+    that:
+      - k3s_role in ['server', 'agent']
+      - k3s_node_sources | length > 0
+      - k3s_role == 'agent' or k3s_api_sources | length > 0
+      - k3s_role == 'server' or k3s_server | length > 0
+    fail_msg: >-
+      Set k3s_role to server or agent, and k3s_node_sources to the cluster's node addresses.
+      A server also needs k3s_api_sources; an agent needs k3s_server.
+    quiet: true
+
+- name: Install iptables and conntrack, which k3s uses from the host
+  ansible.builtin.apt:
+    name:
+      - iptables
+      - conntrack
+    state: present
+
+- name: Read the active swap
+  ansible.builtin.slurp:
+    src: /proc/swaps
+  register: k3s_swaps
+
+- name: Check swap is off
+  ansible.builtin.assert:
+    that: (k3s_swaps.content | b64decode).splitlines() | length == 1
+    fail_msg: Swap is on. Turn it off before installing k3s.
+    quiet: true
+
+- name: Load the kernel modules k3s needs, now and at boot
+  community.general.modprobe:
+    name: "{{ item }}"
+    persistent: present
+  loop:
+    - overlay
+    - br_netfilter
+
+- name: Forward traffic and pass bridged traffic through iptables
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "1"
+    sysctl_file: /etc/sysctl.d/90-k3s.conf
+  loop:
+    - net.ipv4.ip_forward
+    - net.bridge.bridge-nf-call-iptables
+    - net.bridge.bridge-nf-call-ip6tables
+
+- name: Check for a Raspberry Pi kernel command line
+  ansible.builtin.stat:
+    path: /boot/firmware/cmdline.txt
+  register: k3s_cmdline_file
+
+- name: Read the Raspberry Pi kernel command line
+  ansible.builtin.slurp:
+    src: /boot/firmware/cmdline.txt
+  register: k3s_cmdline
+  when: k3s_cmdline_file.stat.exists
+
+- name: Work out which memory cgroup parameters the command line is missing
+  ansible.builtin.set_fact:
+    k3s_cmdline_missing: "{{ ['cgroup_memory=1', 'cgroup_enable=memory'] | reject('in', (k3s_cmdline.content | b64decode).split()) | list }}"
+  when: k3s_cmdline_file.stat.exists
+
+# Pi OS's firmware adds cgroup_disable=memory at boot; parameters later on the line win.
+- name: Turn on the memory cgroup on a Raspberry Pi
+  ansible.builtin.lineinfile:
+    path: /boot/firmware/cmdline.txt
+    regexp: ^(.*)$
+    line: \1 {{ k3s_cmdline_missing | join(' ') }}
+    backrefs: true
+  when: k3s_cmdline_file.stat.exists and k3s_cmdline_missing | length > 0
+
+- name: Read the active cgroup controllers
+  ansible.builtin.slurp:
+    src: /sys/fs/cgroup/cgroup.controllers
+  register: k3s_cgroup_controllers
+
+- name: Reboot to turn on the memory cgroup
+  ansible.builtin.reboot:
+    msg: Rebooting to turn on the memory cgroup for k3s
+  when:
+    - k3s_cmdline_file.stat.exists
+    - "'memory' not in (k3s_cgroup_controllers.content | b64decode).split()"
+
+- name: Read the cgroup controllers after any reboot
+  ansible.builtin.slurp:
+    src: /sys/fs/cgroup/cgroup.controllers
+  register: k3s_cgroup_controllers
+
+- name: Check the memory cgroup is on
+  ansible.builtin.assert:
+    that: "'memory' in (k3s_cgroup_controllers.content | b64decode).split()"
+    fail_msg: The memory cgroup is off, and k3s needs it.
+    quiet: true
+
+- name: Allow the Kubernetes API from the API sources
+  community.general.ufw:
+    rule: allow
+    port: "6443"
+    proto: tcp
+    from_ip: "{{ item }}"
+  loop: "{{ k3s_api_sources }}"
+  when: k3s_role == 'server'
+
+- name: Allow the kubelet from the cluster's nodes
+  community.general.ufw:
+    rule: allow
+    port: "10250"
+    proto: tcp
+    from_ip: "{{ item }}"
+  loop: "{{ k3s_node_sources }}"
+
+- name: Allow flannel's VXLAN from the cluster's nodes
+  community.general.ufw:
+    rule: allow
+    port: "8472"
+    proto: udp
+    from_ip: "{{ item }}"
+  loop: "{{ k3s_node_sources }}"
+
+- name: Allow traffic routed from pods and services
+  community.general.ufw:
+    rule: allow
+    route: true
+    from_ip: "{{ item }}"
+  loop:
+    - "{{ k3s_cluster_cidr }}"
+    - "{{ k3s_service_cidr }}"
+
+- name: Allow traffic routed to pods and services
+  community.general.ufw:
+    rule: allow
+    route: true
+    to_ip: "{{ item }}"
+  loop:
+    - "{{ k3s_cluster_cidr }}"
+    - "{{ k3s_service_cidr }}"
+
+# Pods reaching the node they run on keep their own address and aren't routed.
+- name: Allow pods and services to reach this node
+  community.general.ufw:
+    rule: allow
+    from_ip: "{{ item }}"
+  loop:
+    - "{{ k3s_cluster_cidr }}"
+    - "{{ k3s_service_cidr }}"
+
+- name: Create k3s's config directory
+  ansible.builtin.file:
+    path: /etc/rancher/k3s
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Download the install script for this k3s version
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/k3s-io/k3s/{{ k3s_version | urlencode }}/install.sh
+    dest: /usr/local/share/k3s-install-{{ k3s_version }}.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Read the installed k3s version
+  ansible.builtin.command: /usr/local/bin/k3s --version
+  register: k3s_installed
+  changed_when: false
+  failed_when: false
+
+- name: Write the server's config
+  ansible.builtin.template:
+    src: server.yaml.j2
+    dest: /etc/rancher/k3s/config.yaml
+    owner: root
+    group: root
+    mode: "0600"
+  when: k3s_role == 'server'
+  notify: Restart k3s
+
+- name: Install the k3s server
+  ansible.builtin.command: /usr/local/share/k3s-install-{{ k3s_version }}.sh
+  environment:
+    INSTALL_K3S_VERSION: "{{ k3s_version }}"
+    INSTALL_K3S_EXEC: server
+  when: k3s_role == 'server' and k3s_version not in k3s_installed.stdout
+  changed_when: true
+
+- name: Wait for the server's join token
+  ansible.builtin.wait_for:
+    path: /var/lib/rancher/k3s/server/node-token
+  when: k3s_role == 'server'
+
+- name: Wait for the Kubernetes API to answer
+  ansible.builtin.command: k3s kubectl get nodes
+  register: k3s_api
+  until: k3s_api.rc == 0
+  retries: 30
+  delay: 10
+  changed_when: false
+  when: k3s_role == 'server'
+
+# delegate_to is worked out before when, so a server must not point it at its empty k3s_server.
+- name: Read the join token from the server
+  ansible.builtin.slurp:
+    src: /var/lib/rancher/k3s/server/node-token
+  delegate_to: "{{ k3s_server if k3s_role == 'agent' else inventory_hostname }}"
+  register: k3s_token
+  no_log: true
+  when: k3s_role == 'agent'
+
+- name: Write the agent's config
+  ansible.builtin.template:
+    src: agent.yaml.j2
+    dest: /etc/rancher/k3s/config.yaml
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  when: k3s_role == 'agent'
+  notify: Restart k3s
+
+- name: Install the k3s agent
+  ansible.builtin.command: /usr/local/share/k3s-install-{{ k3s_version }}.sh
+  environment:
+    INSTALL_K3S_VERSION: "{{ k3s_version }}"
+    INSTALL_K3S_EXEC: agent
+  when: k3s_role == 'agent' and k3s_version not in k3s_installed.stdout
+  changed_when: true
+
+# k3s names each node after its kernel's node name.
+- name: Wait for this agent to join the cluster
+  ansible.builtin.command: k3s kubectl get node {{ ansible_facts['nodename'] }}
+  delegate_to: "{{ k3s_server if k3s_role == 'agent' else inventory_hostname }}"
+  register: k3s_agent_node
+  until: k3s_agent_node.rc == 0
+  retries: 30
+  delay: 10
+  changed_when: false
+  when: k3s_role == 'agent'
+
+- name: Read this agent's node
+  ansible.builtin.command: k3s kubectl get node {{ ansible_facts['nodename'] }} --output json
+  delegate_to: "{{ k3s_server if k3s_role == 'agent' else inventory_hostname }}"
+  register: k3s_agent_node
+  changed_when: false
+  when: k3s_role == 'agent'
+
+# A node can't give itself a node-role label, so the server sets it.
+- name: Label this agent as a worker
+  ansible.builtin.command: k3s kubectl label node {{ ansible_facts['nodename'] }} node-role.kubernetes.io/worker=true
+  delegate_to: "{{ k3s_server if k3s_role == 'agent' else inventory_hostname }}"
+  changed_when: true
+  when:
+    - k3s_role == 'agent'
+    - (k3s_agent_node.stdout | from_json).metadata.labels['node-role.kubernetes.io/worker'] | default('') != 'true'

@@ -1,0 +1,6 @@
+# Managed by Ansible.
+server: https://{{ hostvars[k3s_server]['ansible_host'] | default(k3s_server) }}:6443
+token: {{ k3s_token.content | b64decode | trim }}
+kubelet-arg:
+  - kube-reserved={{ k3s_kube_reserved }}
+  - system-reserved={{ k3s_system_reserved }}
