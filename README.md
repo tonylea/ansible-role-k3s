@@ -10,6 +10,7 @@ Installs a pinned k3s server or agent on Debian trixie and Raspberry Pi OS, with
 - Installs the pinned k3s version with the install script from that version's tag.
 - Writes every setting to `/etc/rancher/k3s/config.yaml`, readable by root only, and restarts k3s when it changes. Other roles add drop-ins under `config.yaml.d/`.
   - Servers turn off the bundled Traefik, ServiceLB and local-path storage, encrypt secrets, and add the server's name and address to the API certificate.
+  - Servers are tainted `node-role.kubernetes.io/control-plane:NoSchedule`, so only workloads that tolerate it run there. k3s applies the taint when the server first joins.
   - Agents read the join token from the server over SSH without logging it.
 - Optionally saves the server's kubeconfig on the machine running Ansible, pointing at the server.
 

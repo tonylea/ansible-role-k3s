@@ -81,6 +81,18 @@
       ansible.builtin.assert:
         that: "'ufw allow from 172.30.0.0/24 to any port 6443 proto tcp' in ufw_rules.stdout"
 
+    - name: Read the server's node
+      ansible.builtin.command: k3s kubectl get node {{ ansible_facts['nodename'] }} -o json
+      register: server_node
+      changed_when: false
+
+    - name: The server is tainted so ordinary workloads stay off it
+      ansible.builtin.assert:
+        that: >-
+          (server_node.stdout | from_json).spec.taints
+          | selectattr('key', 'equalto', 'node-role.kubernetes.io/control-plane')
+          | selectattr('effect', 'equalto', 'NoSchedule') | list | length == 1
+
 - name: Verify the agent
   hosts: agent
   become: true

@@ -4,6 +4,8 @@ disable:
   - servicelb
   - local-storage
 secrets-encryption: true
+node-taint:
+  - node-role.kubernetes.io/control-plane=:NoSchedule
 write-kubeconfig-mode: "0600"
 tls-san:
 {% for name in [inventory_hostname, ansible_host | default(inventory_hostname)] | unique %}
