@@ -1,0 +1,21 @@
+name: Linting
+
+on:
+  pull_request:
+
+jobs:
+  common:
+    uses: tonylea/ci-templates/.github/workflows/linting-common.yml@v1.0.0
+
+  ansible:
+    uses: tonylea/ci-templates/.github/workflows/linting-ansible.yml@v1.0.0
+
+  # The required check. Skipped jobs pass; failed or cancelled ones don't.
+  linting:
+    needs: [common, ansible]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Every linting job passed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

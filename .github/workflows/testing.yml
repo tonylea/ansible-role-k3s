@@ -1,0 +1,18 @@
+name: Testing
+
+on:
+  pull_request:
+
+jobs:
+  ansible-molecule:
+    uses: tonylea/ci-templates/.github/workflows/testing-ansible-molecule.yml@v1.0.0
+
+  # The required check. Skipped jobs pass; failed or cancelled ones don't.
+  testing:
+    needs: [ansible-molecule]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Every testing job passed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

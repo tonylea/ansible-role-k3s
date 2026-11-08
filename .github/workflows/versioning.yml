@@ -1,0 +1,13 @@
+name: Versioning
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  common:
+    uses: tonylea/ci-templates/.github/workflows/versioning-common.yml@v1.0.0
+    permissions:
+      contents: write
+    secrets:
+      release-deploy-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
