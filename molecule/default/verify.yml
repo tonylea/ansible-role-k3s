@@ -81,6 +81,15 @@
       ansible.builtin.assert:
         that: "'ufw allow from 172.30.0.0/24 to any port 6443 proto tcp' in ufw_rules.stdout"
 
+    - name: Read the agent's node
+      ansible.builtin.command: k3s kubectl get node {{ hostvars['agent']['ansible_facts']['nodename'] }} -o json
+      register: agent_node
+      changed_when: false
+
+    - name: The agent is labelled as a worker
+      ansible.builtin.assert:
+        that: (agent_node.stdout | from_json).metadata.labels['node-role.kubernetes.io/worker'] == 'true'
+
     - name: Read the cluster DNS service's address
       ansible.builtin.command: k3s kubectl --namespace kube-system get service kube-dns --output jsonpath={.spec.clusterIP}
       register: dns_address

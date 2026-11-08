@@ -239,6 +239,22 @@
   changed_when: false
   when: k3s_role == 'agent'
 
+- name: Read this agent's worker label
+  ansible.builtin.command: >-
+    k3s kubectl get node {{ ansible_facts['nodename'] }}
+    --output jsonpath={.metadata.labels.node-role\.kubernetes\.io/worker}
+  delegate_to: "{{ k3s_server if k3s_role == 'agent' else inventory_hostname }}"
+  register: k3s_worker_label
+  changed_when: false
+  when: k3s_role == 'agent'
+
+# A node can't give itself a node-role label, so the server sets it.
+- name: Label this agent as a worker
+  ansible.builtin.command: k3s kubectl label node {{ ansible_facts['nodename'] }} node-role.kubernetes.io/worker=true
+  delegate_to: "{{ k3s_server if k3s_role == 'agent' else inventory_hostname }}"
+  changed_when: true
+  when: k3s_role == 'agent' and k3s_worker_label.stdout != 'true'
+
 - name: Read the server's kubeconfig
   ansible.builtin.slurp:
     src: /etc/rancher/k3s/k3s.yaml
