@@ -172,10 +172,11 @@
     path: /var/lib/rancher/k3s/server/node-token
   when: k3s_role == 'server'
 
+# delegate_to is worked out before when, so a server must not point it at its empty k3s_server.
 - name: Read the join token from the server
   ansible.builtin.slurp:
     src: /var/lib/rancher/k3s/server/node-token
-  delegate_to: "{{ k3s_server }}"
+  delegate_to: "{{ k3s_server if k3s_role == 'agent' else inventory_hostname }}"
   register: k3s_token
   no_log: true
   when: k3s_role == 'agent'
