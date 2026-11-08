@@ -1,0 +1,19 @@
+k3s_version: v1.37.2+k3s1
+
+# server or agent. An agent also needs k3s_server, the server's inventory hostname.
+k3s_role: ""
+k3s_server: ""
+
+# Who may reach the Kubernetes API (servers only), and the cluster's node addresses.
+k3s_api_sources: []
+k3s_node_sources: []
+
+k3s_cluster_cidr: 10.42.0.0/16
+k3s_service_cidr: 10.43.0.0/16
+
+# CPU and memory kept back from pods, for Kubernetes itself and for the OS.
+k3s_kube_reserved: cpu=250m,memory=512Mi
+k3s_system_reserved: cpu=250m,memory=512Mi
+
+# When set on the server, its kubeconfig is saved here on the machine running Ansible.
+k3s_kubeconfig_fetch_path: ""

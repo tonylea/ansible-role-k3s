@@ -1,0 +1,16 @@
+# Managed by Ansible.
+disable:
+  - traefik
+  - servicelb
+  - local-storage
+secrets-encryption: true
+write-kubeconfig-mode: "0600"
+tls-san:
+{% for name in [inventory_hostname, ansible_host | default(inventory_hostname)] | unique %}
+  - {{ name }}
+{% endfor %}
+cluster-cidr: {{ k3s_cluster_cidr }}
+service-cidr: {{ k3s_service_cidr }}
+kubelet-arg:
+  - kube-reserved={{ k3s_kube_reserved }}
+  - system-reserved={{ k3s_system_reserved }}

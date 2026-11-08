@@ -11,5 +11,31 @@
     "CHANGELOG.md",
     "package-lock.json"
   ],
-  "words": []
+  "words": [
+    "cgroupns",
+    "cmdline",
+    "endfor",
+    "endswith",
+    "hostvars",
+    "kmod",
+    "kubeconfig",
+    "kubelet",
+    "netfilter",
+    "nocloud",
+    "PARTUUID",
+    "proc",
+    "procps",
+    "regdom",
+    "rootfstype",
+    "rootwait",
+    "servicelb",
+    "SIGRTMIN",
+    "splitlines",
+    "sysv",
+    "tmpfs",
+    "tonylea",
+    "urlencode",
+    "vars",
+    "VXLAN"
+  ]
 }
