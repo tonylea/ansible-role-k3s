@@ -8,7 +8,7 @@ node-taint:
   - node-role.kubernetes.io/control-plane=:NoSchedule
 write-kubeconfig-mode: "0600"
 tls-san:
-{% for name in [inventory_hostname, ansible_host | default(inventory_hostname)] | unique %}
+{% for name in ([inventory_hostname, ansible_host | default(inventory_hostname)] + k3s_tls_san_extra) | unique %}
   - {{ name }}
 {% endfor %}
 cluster-cidr: {{ k3s_cluster_cidr }}

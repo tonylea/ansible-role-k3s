@@ -61,6 +61,8 @@ provisioner:
     host_vars:
       server:
         k3s_role: server
+        k3s_tls_san_extra:
+          - k8s.example.internal
         k3s_kubeconfig_fetch_path: ${MOLECULE_EPHEMERAL_DIRECTORY}/kubeconfig
       agent:
         k3s_role: agent

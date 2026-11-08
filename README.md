@@ -9,7 +9,7 @@ Installs a pinned k3s server or agent on Debian trixie and Raspberry Pi OS, with
 - Opens the firewall with ufw: the Kubernetes API (servers only) from `k3s_api_sources`; the kubelet and flannel's VXLAN from `k3s_node_sources`; traffic routed to and from the pod and service ranges; and pods reaching the node they run on.
 - Installs the pinned k3s version with the install script from that version's tag.
 - Writes every setting to `/etc/rancher/k3s/config.yaml`, readable by root only, and restarts k3s when it changes. Other roles add drop-ins under `config.yaml.d/`.
-  - Servers turn off the bundled Traefik, ServiceLB and local-path storage, encrypt secrets, and add the server's name and address to the API certificate.
+  - Servers turn off the bundled Traefik, ServiceLB and local-path storage, encrypt secrets, and add the server's name, address and `k3s_tls_san_extra` to the API certificate.
   - Servers are tainted `node-role.kubernetes.io/control-plane:NoSchedule`, so only workloads that tolerate it run there. k3s applies the taint when the server first joins.
   - Agents read the join token from the server over SSH without logging it.
 - Optionally saves the server's kubeconfig on the machine running Ansible, pointing at the server.
@@ -23,6 +23,7 @@ Installs a pinned k3s server or agent on Debian trixie and Raspberry Pi OS, with
 | `k3s_server` | none, required for agents | The server's inventory hostname |
 | `k3s_api_sources` | none, required for servers | Addresses allowed to reach the Kubernetes API |
 | `k3s_node_sources` | none, required | The cluster's node addresses |
+| `k3s_tls_san_extra` | `[]` | Other names for the API certificate, such as a DNS alias |
 | `k3s_cluster_cidr` | `10.42.0.0/16` | Pod range |
 | `k3s_service_cidr` | `10.43.0.0/16` | Service range |
 | `k3s_kube_reserved` | `cpu=250m,memory=512Mi` | Kept back from pods for Kubernetes |
