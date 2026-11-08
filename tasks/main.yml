@@ -254,32 +254,3 @@
   delegate_to: "{{ k3s_server if k3s_role == 'agent' else inventory_hostname }}"
   changed_when: true
   when: k3s_role == 'agent' and k3s_worker_label.stdout != 'true'
-
-- name: Read the server's kubeconfig
-  ansible.builtin.slurp:
-    src: /etc/rancher/k3s/k3s.yaml
-  register: k3s_kubeconfig
-  no_log: true
-  when: k3s_role == 'server' and k3s_kubeconfig_fetch_path | length > 0
-
-- name: Create the kubeconfig's directory on the machine running Ansible
-  ansible.builtin.file:
-    path: "{{ k3s_kubeconfig_fetch_path | dirname }}"
-    state: directory
-    mode: "0700"
-  delegate_to: localhost
-  become: false
-  when: k3s_role == 'server' and k3s_kubeconfig_fetch_path | length > 0
-
-# Delegated to localhost, ansible_host means localhost's address, so read the server's from hostvars.
-- name: Save the kubeconfig on the machine running Ansible, pointing at the server
-  ansible.builtin.copy:
-    content: >-
-      {{ k3s_kubeconfig.content | b64decode
-         | replace('https://127.0.0.1:6443', 'https://' ~ (hostvars[inventory_hostname]['ansible_host'] | default(inventory_hostname)) ~ ':6443') }}
-    dest: "{{ k3s_kubeconfig_fetch_path }}"
-    mode: "0600"
-  delegate_to: localhost
-  become: false
-  no_log: true
-  when: k3s_role == 'server' and k3s_kubeconfig_fetch_path | length > 0

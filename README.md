@@ -12,7 +12,6 @@ Installs a pinned k3s server or agent on Debian trixie and Raspberry Pi OS, with
   - Servers turn off the bundled Traefik, ServiceLB and local-path storage, encrypt secrets, and add the server's name, address and `k3s_tls_san_extra` to the API certificate.
   - Servers are tainted `node-role.kubernetes.io/control-plane:NoSchedule`, so only workloads that tolerate it run there. k3s applies the taint when the server first joins.
   - Agents read the join token from the server over SSH without logging it, and the server labels each agent `node-role.kubernetes.io/worker`, so `kubectl get nodes` shows its role.
-- Optionally saves the server's kubeconfig on the machine running Ansible, pointing at the server.
 
 ## Variables
 
@@ -29,7 +28,6 @@ Installs a pinned k3s server or agent on Debian trixie and Raspberry Pi OS, with
 | `k3s_cluster_dns` | `10.43.0.10` | Cluster DNS address, inside the service range |
 | `k3s_kube_reserved` | `cpu=250m,memory=512Mi` | Kept back from pods for Kubernetes |
 | `k3s_system_reserved` | `cpu=250m,memory=512Mi` | Kept back from pods for the OS |
-| `k3s_kubeconfig_fetch_path` | empty | Where to save the server's kubeconfig on the machine running Ansible |
 
 ## Requirements
 
@@ -49,7 +47,7 @@ With `k3s_role`, `k3s_server`, `k3s_api_sources` and `k3s_node_sources` set in t
 
 ## Testing
 
-Molecule starts a server and an agent in systemd containers, installs k3s on both and checks both nodes go `Ready`, along with the kernel command line, settings, firewall rules and the fetched kubeconfig.
+Molecule starts a server and an agent in systemd containers, installs k3s on both and checks both nodes go `Ready`, along with the kernel command line, settings, the server's taint, the worker label, the API certificate's names and the firewall rules.
 
 ## Licence
 

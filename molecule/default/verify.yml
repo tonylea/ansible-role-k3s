@@ -132,16 +132,3 @@
     - name: The Kubernetes API isn't opened on an agent
       ansible.builtin.assert:
         that: "'6443' not in ufw_rules.stdout"
-
-- name: Verify the fetched kubeconfig
-  hosts: localhost
-  tasks:
-    - name: Read the kubeconfig saved on the machine running Ansible
-      ansible.builtin.slurp:
-        src: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/kubeconfig"
-      register: kubeconfig
-
-    - name: The kubeconfig points at the server, not localhost
-      ansible.builtin.assert:
-        that: "'server: https://server:6443' in (kubeconfig.content | b64decode)"
-        fail_msg: "The kubeconfig's server lines: {{ (kubeconfig.content | b64decode).splitlines() | select('search', 'server:') | list }}"
