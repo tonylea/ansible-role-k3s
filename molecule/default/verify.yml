@@ -46,6 +46,7 @@
         that:
           - "'ufw allow from 172.30.0.10 to any port 10250 proto tcp' in ufw_rules.stdout"
           - "'ufw allow from 172.30.0.11 to any port 8472 proto udp' in ufw_rules.stdout"
+          - "'ufw allow from 172.30.0.10 to any port 7946' in ufw_rules.stdout"
           - "'ufw route allow from 10.42.0.0/16' in ufw_rules.stdout"
           - "'ufw route allow to 10.43.0.0/16' in ufw_rules.stdout"
           - "'ufw allow from 10.42.0.0/16' in ufw_rules.stdout"
