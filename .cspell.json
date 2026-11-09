@@ -26,6 +26,8 @@
     "kubeconfig",
     "kubelet",
     "lineinfile",
+    "memberlist",
+    "MetalLB",
     "netfilter",
     "nocloud",
     "nodename",
