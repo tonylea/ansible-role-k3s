@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.1.0](https://github.com/tonylea/ansible-role-k3s/compare/v1.0.0...v1.1.0) (2026-11-09)
+
+### Features
+
+* allow MetalLB's memberlist between the cluster's nodes ([735efdd](https://github.com/tonylea/ansible-role-k3s/commit/735efdde3077198e336876ae69233980ee8d5c43))
+
+### Documentation
+
+* add a contributing guide ([4f28edd](https://github.com/tonylea/ansible-role-k3s/commit/4f28edd3c3acfbea6a8afd2359492c00513b38ab))
+* put each sentence of the README on its own line ([d1aafcc](https://github.com/tonylea/ansible-role-k3s/commit/d1aafcce8cee3b21d3b247db4c85970aa4d03445))
+
 ## 1.0.0 (2026-11-08)
 
 ### Features
