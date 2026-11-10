@@ -4,7 +4,7 @@ Installs a pinned k3s server or agent on Debian trixie and Raspberry Pi OS, with
 
 ## What it does
 
-- Checks swap is off, loads `overlay` and `br_netfilter`, and turns on forwarding and iptables filtering of bridged traffic.
+- Loads `overlay` and `br_netfilter`, and turns on forwarding and iptables filtering of bridged traffic.
 - On a Raspberry Pi, appends `cgroup_memory=1 cgroup_enable=memory` to `/boot/firmware/cmdline.txt`, since Pi OS's firmware turns the memory cgroup off.
   Reboots only if the memory cgroup is still off.
 - Opens the firewall with ufw: the Kubernetes API (servers only) from `k3s_api_sources`; the kubelet, flannel's VXLAN and MetalLB's memberlist from `k3s_node_sources`; traffic routed to and from the pod and service ranges; and pods reaching the node they run on.

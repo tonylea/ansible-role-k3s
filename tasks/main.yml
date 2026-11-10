@@ -17,17 +17,6 @@
       - conntrack
     state: present
 
-- name: Read the active swap
-  ansible.builtin.slurp:
-    src: /proc/swaps
-  register: k3s_swaps
-
-- name: Check swap is off
-  ansible.builtin.assert:
-    that: (k3s_swaps.content | b64decode).splitlines() | length == 1
-    fail_msg: Swap is on. Turn it off before installing k3s.
-    quiet: true
-
 - name: Load the kernel modules k3s needs, now and at boot
   community.general.modprobe:
     name: "{{ item }}"
