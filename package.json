@@ -1,6 +1,6 @@
 {
   "name": "ansible-role-k3s",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Installs a pinned k3s server or agent, with its config and firewall rules",
   "private": true,
   "repository": {

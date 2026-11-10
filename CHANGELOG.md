@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.2.0](https://github.com/tonylea/ansible-role-k3s/compare/v1.1.0...v1.2.0) (2026-11-10)
+
+### Features
+
+* install k3s on nodes with swap on ([d07f754](https://github.com/tonylea/ansible-role-k3s/commit/d07f754ce22c2ed1064555b0065e591f3621570a))
+
 ## [1.1.0](https://github.com/tonylea/ansible-role-k3s/compare/v1.0.0...v1.1.0) (2026-11-09)
 
 ### Features
