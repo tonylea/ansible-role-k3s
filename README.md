@@ -7,7 +7,7 @@ Installs a pinned k3s server or agent on Debian trixie and Raspberry Pi OS, with
 - Loads `overlay` and `br_netfilter`, and turns on forwarding and iptables filtering of bridged traffic.
 - On a Raspberry Pi, appends `cgroup_memory=1 cgroup_enable=memory` to `/boot/firmware/cmdline.txt`, since Pi OS's firmware turns the memory cgroup off.
   Reboots only if the memory cgroup is still off.
-- Opens the firewall with ufw: the Kubernetes API (servers only) from `k3s_api_sources`; the kubelet, flannel's VXLAN and MetalLB's memberlist from `k3s_node_sources`; traffic routed to and from the pod and service ranges; and pods reaching the node they run on.
+- Opens the firewall with ufw: the Kubernetes API (servers only) from `k3s_api_sources`; the kubelet, flannel's VXLAN, MetalLB's memberlist, node-exporter's metrics (9100) and MetalLB's speaker metrics (9120) from `k3s_node_sources`; traffic routed to and from the pod and service ranges; and pods reaching the node they run on.
 - Installs the pinned k3s version with the install script from that version's tag.
 - Writes every setting to `/etc/rancher/k3s/config.yaml`, readable by root only, and restarts k3s when it changes.
   Other roles add drop-ins under `config.yaml.d/`.
