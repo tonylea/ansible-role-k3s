@@ -94,6 +94,10 @@
       ansible.builtin.assert:
         that: (agent_node.stdout | from_json).metadata.labels['node-role.kubernetes.io/worker'] == 'true'
 
+    - name: The agent registered with its own label
+      ansible.builtin.assert:
+        that: (agent_node.stdout | from_json).metadata.labels['example.com/test'] | default('') == 'true'
+
     - name: Read the cluster DNS service's address
       ansible.builtin.command: k3s kubectl --namespace kube-system get service kube-dns --output jsonpath={.spec.clusterIP}
       register: dns_address

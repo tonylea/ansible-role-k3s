@@ -66,6 +66,8 @@ provisioner:
       agent:
         k3s_role: agent
         k3s_server: server
+        k3s_node_labels:
+          - example.com/test=true
 
 verifier:
   name: ansible
