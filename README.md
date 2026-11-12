@@ -11,6 +11,8 @@ Installs a pinned k3s server or agent on Debian trixie and Raspberry Pi OS, with
 - Installs the pinned k3s version with the install script from that version's tag.
 - Writes every setting to `/etc/rancher/k3s/config.yaml`, readable by root only, and restarts k3s when it changes.
   Other roles add drop-ins under `config.yaml.d/`.
+- Writes `k3s_node_labels` to a `node-label+` drop-in, `config.yaml.d/node-labels.yaml`, before k3s is installed, since k3s only applies node labels when a node first joins.
+  `node-label+` adds to labels set by other drop-ins instead of replacing them.
   - Servers turn off the bundled Traefik, ServiceLB and local-path storage, encrypt secrets, and add the server's name, address and `k3s_tls_san_extra` to the API certificate.
   - Servers are tainted `node-role.kubernetes.io/control-plane:NoSchedule`, so only workloads that tolerate it run there. k3s applies the taint when the server first joins.
   - Agents read the join token from the server over SSH without logging it, and the server labels each agent `node-role.kubernetes.io/worker`, so `kubectl get nodes` shows its role.
@@ -24,6 +26,7 @@ Installs a pinned k3s server or agent on Debian trixie and Raspberry Pi OS, with
 | `k3s_server` | none, required for agents | The server's inventory hostname |
 | `k3s_api_sources` | none, required for servers | Addresses allowed to reach the Kubernetes API |
 | `k3s_node_sources` | none, required | The cluster's node addresses |
+| `k3s_node_labels` | `[]` | Labels the node registers with, as `key=value` |
 | `k3s_tls_san_extra` | `[]` | Other names for the API certificate, such as a DNS alias |
 | `k3s_cluster_cidr` | `10.42.0.0/16` | Pod range |
 | `k3s_service_cidr` | `10.43.0.0/16` | Service range |
@@ -49,7 +52,7 @@ With `k3s_role`, `k3s_server`, `k3s_api_sources` and `k3s_node_sources` set in t
 
 ## Testing
 
-Molecule starts a server and an agent in systemd containers, installs k3s on both and checks both nodes go `Ready`, along with the kernel command line, settings, the server's taint, the worker label, the API certificate's names and the firewall rules.
+Molecule starts a server and an agent in systemd containers, installs k3s on both and checks both nodes go `Ready`, along with the kernel command line, settings, the server's taint, the worker label, the agent's own label, the API certificate's names and the firewall rules.
 
 ## Licence
 

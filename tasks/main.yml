@@ -167,6 +167,31 @@
     group: root
     mode: "0755"
 
+- name: Create k3s's config drop-in directory
+  ansible.builtin.file:
+    path: /etc/rancher/k3s/config.yaml.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# node-label+ appends to labels set elsewhere instead of replacing them.
+# k3s only applies node labels when a node first registers, so this comes before the install.
+- name: Write the node's labels
+  ansible.builtin.copy:
+    dest: /etc/rancher/k3s/config.yaml.d/node-labels.yaml
+    content: "{{ {'node-label+': k3s_node_labels} | to_nice_yaml(indent=2) }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: k3s_node_labels | length > 0
+
+- name: Remove the node's labels drop-in when it has none
+  ansible.builtin.file:
+    path: /etc/rancher/k3s/config.yaml.d/node-labels.yaml
+    state: absent
+  when: k3s_node_labels | length == 0
+
 - name: Download the install script for this k3s version
   ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/k3s-io/k3s/{{ k3s_version | urlencode }}/install.sh
