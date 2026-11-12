@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.4.0](https://github.com/tonylea/ansible-role-k3s/compare/v1.3.0...v1.4.0) (2026-11-12)
+
+### Features
+
+* register the node with labels from k3s_node_labels ([f010a41](https://github.com/tonylea/ansible-role-k3s/commit/f010a416dae895912806a54bf6b065eea0f949e8))
+
 ## [1.3.0](https://github.com/tonylea/ansible-role-k3s/compare/v1.2.0...v1.3.0) (2026-11-11)
 
 ### Features
