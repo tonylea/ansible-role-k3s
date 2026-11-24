@@ -5,6 +5,7 @@ Installs a pinned k3s server or agent on Debian trixie and Raspberry Pi OS, with
 ## What it does
 
 - Loads `overlay` and `br_netfilter`, and turns on forwarding and iptables filtering of bridged traffic.
+- Sets `vm.max_map_count` to 262144, the minimum Elasticsearch needs, so it can run on any node.
 - On a Raspberry Pi, appends `cgroup_memory=1 cgroup_enable=memory` to `/boot/firmware/cmdline.txt`, since Pi OS's firmware turns the memory cgroup off.
   Reboots only if the memory cgroup is still off.
 - Opens the firewall with ufw: the Kubernetes API (servers only) from `k3s_api_sources`; the kubelet, flannel's VXLAN, MetalLB's memberlist, node-exporter's metrics (9100) and MetalLB's speaker metrics (9120) from `k3s_node_sources`; traffic routed to and from the pod and service ranges; and pods reaching the node they run on.

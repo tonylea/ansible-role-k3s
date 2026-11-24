@@ -35,6 +35,12 @@
     - net.bridge.bridge-nf-call-iptables
     - net.bridge.bridge-nf-call-ip6tables
 
+- name: Raise the memory map limit so Elasticsearch can run on any node
+  ansible.posix.sysctl:
+    name: vm.max_map_count
+    value: "262144"
+    sysctl_file: /etc/sysctl.d/90-k3s.conf
+
 - name: Check for a Raspberry Pi kernel command line
   ansible.builtin.stat:
     path: /boot/firmware/cmdline.txt
