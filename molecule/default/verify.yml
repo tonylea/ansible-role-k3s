@@ -18,14 +18,14 @@
       ansible.builtin.command: conntrack --version
       changed_when: false
 
-    - name: Read the forwarding and bridge settings
-      ansible.builtin.command: sysctl -n net.ipv4.ip_forward net.bridge.bridge-nf-call-iptables net.bridge.bridge-nf-call-ip6tables
+    - name: Read the forwarding, bridge and memory map settings
+      ansible.builtin.command: sysctl -n net.ipv4.ip_forward net.bridge.bridge-nf-call-iptables net.bridge.bridge-nf-call-ip6tables vm.max_map_count
       register: sysctls
       changed_when: false
 
-    - name: Forwarding and bridged traffic filtering are on
+    - name: Forwarding and bridged traffic filtering are on, and the memory map limit is raised
       ansible.builtin.assert:
-        that: sysctls.stdout_lines == ['1', '1', '1']
+        that: sysctls.stdout_lines == ['1', '1', '1', '262144']
 
     - name: Read the config's permissions
       ansible.builtin.stat:
